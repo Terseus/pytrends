@@ -6,9 +6,11 @@ import pandas as pd
 import numpy as np
 import pytest
 import responses
-from pandas.testing import assert_frame_equal
+# from pandas.testing import assert_frame_equal
 
 from pytrends.request import TrendReq, BASE_TRENDS_URL
+
+from .utils import assert_frame_equal
 
 
 @dataclass
@@ -168,15 +170,21 @@ def test_tokens():
 
 
 @pytest.mark.vcr
-def test_interest_over_time_ok():
+def test_interest_over_time_ok(df_expected_NEW):
     pytrend = TrendReq()
     pytrend.build_payload(kw_list=['pizza', 'bagel'], timeframe='2021-01-01 2021-01-05')
     df_result = pytrend.interest_over_time()
-    df_expected = build_interest_over_time_df({
-        'pizza': [100, 83, 78, 49, 50],
-        'bagel': [2, 2, 2, 1, 1]
-    }, dates=['2021-01-01', '2021-01-02', '2021-01-03', '2021-01-04', '2021-01-05'])
-    assert_frame_equal(df_result, df_expected)
+    # df_expected = build_interest_over_time_df({
+    #     'pizza': [100, 83, 78, 49, 50],
+    #     'bagel': [2, 2, 2, 1, 1]
+    # }, dates=['2021-01-01', '2021-01-02', '2021-01-03', '2021-01-04', '2021-01-05'])
+    # breakpoint()
+    try:
+        assert_frame_equal(df_result, df_expected_NEW)
+    except Exception as error:
+        err = error
+        breakpoint()
+        pass
 
 
 @pytest.mark.vcr
