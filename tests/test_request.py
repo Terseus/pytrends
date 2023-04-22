@@ -179,12 +179,7 @@ def test_interest_over_time_ok(df_expected_NEW):
     #     'bagel': [2, 2, 2, 1, 1]
     # }, dates=['2021-01-01', '2021-01-02', '2021-01-03', '2021-01-04', '2021-01-05'])
     # breakpoint()
-    try:
-        assert_frame_equal(df_result, df_expected_NEW)
-    except Exception as error:
-        err = error
-        breakpoint()
-        pass
+    assert_frame_equal(df_result, df_expected_NEW)
 
 
 @pytest.mark.vcr
