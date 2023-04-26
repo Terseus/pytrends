@@ -6,7 +6,8 @@ import pytest
 from responses import RequestsMock
 import pandas as pd
 
-from .utils import get_item_df_cassette, DataFrameAssertionError, _Repl, StopRepl, capsys_disabled
+from .utils import capsys_disabled
+from .framework.repl import Repl, StopRepl, get_item_df_cassette, DataFrameAssertionError
 
 
 @pytest.fixture
@@ -43,7 +44,7 @@ def pytest_runtest_call(item: pytest.Item) -> None:
         yield
     except DataFrameAssertionError as error:
         breakpoint()
-        repl = _Repl(item, error)
+        repl = Repl(item, error)
         with capsys_disabled(item.config):
             with suppress(StopRepl):
                 repl.start_loop()
