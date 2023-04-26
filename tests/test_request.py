@@ -170,7 +170,8 @@ def test_tokens():
 
 
 @pytest.mark.vcr
-def test_interest_over_time_ok(df_expected_NEW):
+def test_interest_over_time_ok(df_loader):
+    df_expected_NEW = df_loader()
     pytrend = TrendReq()
     pytrend.build_payload(kw_list=['pizza', 'bagel'], timeframe='2021-01-01 2021-01-05')
     df_result = pytrend.interest_over_time()

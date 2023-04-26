@@ -8,6 +8,7 @@ from _pytest.capture import CaptureManager
 import pytest
 from responses import RequestsMock
 import pandas as pd
+from vcr import VCR
 
 from .utils import DataFrameAssertionError
 
@@ -89,17 +90,10 @@ class _Repl:
             orient='table',
             indent=2
         )
-        # TODO: ¿Cómo repetir el test después de modificar el cassette del test?
-        # Ahora mismo si no hago nada el test falla de todos modos.
-        # Aunque borre los campos de sys, sigue fallando
-        # import sys
-        # del sys.last_type
-        # del sys.last_value
-        # del sys.last_traceback
-        # Aunque llame a teardown y setup, sigue fallando; no recarga las fixtures
-        # self._item.teardown()
-        # self._item.setup()
-        # self._item.runtest()
+        cassette: VCR = self._item._request.getfixturevalue("vcr")
+        cassette.rewind()
+        if not cassette.write_protected:
+            cassette.data.clear()
         raise StopRepl()
 
     def start_loop(self) -> None:
@@ -107,7 +101,7 @@ class _Repl:
         self._print_title(f"Test DataFrame for {self._item.name}")
         print(self._error)
         while True:
-            print("Choose an option:")
+            print("\nChoose an option:")
             result = input(self._prompt)
             try:
                 option = self._resolve_input(result)
@@ -134,27 +128,6 @@ def _get_item_df_cassette(item: pytest.Item) -> Path:
     return DATAFRAMES_PATH / f"df_expected_{item.name}.json"
 
 
-def _dataframe_assertion_error_repl(
-    item: pytest.Item,
-    error: DataFrameAssertionError,
-) -> None:
-    print(error)
-    print("========== Differences ==========")
-    print(error.get_diff())
-    while True:
-        print("Choose an option:")
-        result = input(
-            "["
-            "show (R)esult, "
-            "show (E)xpected, "
-            "show (F)ull diff, "
-            "(A)ccept new result, "
-            "(C)ancel)"
-            "]: "
-        )
-        return result
-
-
 @pytest.fixture
 def mocked_responses():
     """
@@ -169,14 +142,16 @@ def mocked_responses():
 
 
 @pytest.fixture
-def df_expected_NEW(request: SubRequest) -> pd.DataFrame:
-    file_dataframe = _get_item_df_cassette(request.node)
-    dataframe = pd.read_json(file_dataframe, orient='table')
-    return dataframe
+def df_loader(request: SubRequest) -> Callable[[], pd.DataFrame]:
+    def loader() -> pd.DataFrame:
+        file_dataframe = _get_item_df_cassette(request.node)
+        dataframe = pd.read_json(file_dataframe, orient='table')
+        return dataframe
+    return loader
 
 
 def pytest_runtest_call(item: pytest.Item) -> None:
-    if "df_expected_NEW" not in item.fixturenames:
+    if "df_loader" not in item.fixturenames:
         return item.runtest()
     try:
         item.runtest()
@@ -185,3 +160,4 @@ def pytest_runtest_call(item: pytest.Item) -> None:
         with _capsys_disabled(item.config):
             with suppress(StopRepl):
                 repl.start_loop()
+            return pytest_runtest_call(item)
