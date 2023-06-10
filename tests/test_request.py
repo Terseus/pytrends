@@ -6,11 +6,12 @@ import pandas as pd
 import numpy as np
 import pytest
 import responses
-# from pandas.testing import assert_frame_equal
+from pandas.testing import assert_frame_equal
 
 from pytrends.request import TrendReq, BASE_TRENDS_URL
 
-from .utils import assert_frame_equal
+# from .utils import assert_frame_equal
+from .framework.dataframe_cassette import DataFrameCassette
 
 
 @dataclass
@@ -170,17 +171,17 @@ def test_tokens():
 
 
 @pytest.mark.vcr
-def test_interest_over_time_ok(df_loader):
-    df_expected_NEW = df_loader()
+def test_interest_over_time_ok(df_cassette):
     pytrend = TrendReq()
     pytrend.build_payload(kw_list=['pizza', 'bagel'], timeframe='2021-01-01 2021-01-05')
     df_result = pytrend.interest_over_time()
+    df_cassette.assert_equals_to(df_result)
     # df_expected = build_interest_over_time_df({
     #     'pizza': [100, 83, 78, 49, 50],
     #     'bagel': [2, 2, 2, 1, 1]
     # }, dates=['2021-01-01', '2021-01-02', '2021-01-03', '2021-01-04', '2021-01-05'])
     # breakpoint()
-    assert_frame_equal(df_result, df_expected_NEW)
+    # assert_frame_equal(df_result, df_expected_NEW)
 
 
 @pytest.mark.vcr
